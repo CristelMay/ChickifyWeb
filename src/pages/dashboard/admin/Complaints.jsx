@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import ComplaintTable from "../../../components/admin/tables/ComplaintTable";
 import { DatePicker } from "@mui/x-date-pickers";
-
 export default function Complaints() {
   const options = ["In Review", "Resolved", "Refunded"];
   const [selectedOption, setSelectedOption] = useState("In Review");

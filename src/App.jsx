@@ -117,6 +117,7 @@ import SuspiciousActivities from "./pages/dashboard/super-admin/SuspiciousActivi
 import PriceManagement from "./pages/dashboard/admin/PriceManagement";
 import EggInventory from "./pages/dashboard/admin/EggInventory";
 import FeedMonitoring from "./pages/dashboard/admin/FeedMonitoring";
+import Expense from "./pages/dashboard/admin/Expense";
 import Business from "./pages/dashboard/admin/Business";
 import Messages from "./pages/dashboard/admin/Messages";
 import NotFound from "./pages/404";
@@ -180,6 +181,7 @@ export default function App() {
               <Route path="products/price-management" element={<PriceManagement />} />
               <Route path="expenses/feed-monitoring" element={<FeedMonitoring />} />
               <Route path="expenses/business" element={<Business />} />
+              <Route path="expenses/expense" element={<Expense />} />
               <Route path="order-status" element={<OrderStatus />} />
               <Route path="complaints" element={<Complaints />} />
               <Route path="messages" element={<Messages />} />

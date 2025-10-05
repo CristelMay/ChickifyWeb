@@ -97,6 +97,7 @@ export const sidebarItems = [
     children: [
       { label: "Feed Monitoring", path: { admin: "/admin/expenses/feed-monitoring" } },
       { label: "Business",        path: { admin: "/admin/expenses/business" } },
+      { label: "Expense", path: { admin: "/admin/expenses/expense" },},
     ],
   },
   {

@@ -103,6 +103,7 @@ export default function DashboardLayout() {
     "/admin/products/discount-management": "Discount Management",
     "/admin/products/price-management": "Price Management",
     "/admin/expenses/business": "Business",
+    "/admin/expenses/expense": "Expense",
     "/admin/expenses/feed-monitoring": "Feed Monitoring",
     "/admin/order-status": "Order Status",
     "/admin/messages": "Messages",

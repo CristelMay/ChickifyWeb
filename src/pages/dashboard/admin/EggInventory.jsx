@@ -7,7 +7,7 @@ export default function EggSupplyPage() {
     []
   );
 
-  // Mock rows: farmer, date, batch id, stocks (tray)
+  // Mock rows
   const [rows] = useState([
     {
       id: "1",
@@ -95,7 +95,7 @@ export default function EggSupplyPage() {
     </div>
   );
 
-  // Modal state (plain JS) — View More
+  // Modal state — View More
   const [open, setOpen] = useState(false);
   const [activeRow, setActiveRow] = useState(null);
   const openModal = (row) => {
@@ -107,7 +107,7 @@ export default function EggSupplyPage() {
     setActiveRow(null);
   };
 
-  // NEW: "Send Egg Request" modal state (looks like your screenshot)
+  // NEW: Send Egg Request modal state
   const [requestOpen, setRequestOpen] = useState(false);
   const [reqForm, setReqForm] = useState({ size: "", qty: "" });
   const eggSizes = ["XS", "S", "M", "L", "XL", "J"];
@@ -153,7 +153,7 @@ export default function EggSupplyPage() {
         </button>
       </div>
 
-      {/* Table (Farmer, Date, Batch ID, Stocks tray) */}
+      {/* Table */}
       <div className="mt-4 overflow-hidden rounded-2xl border border-gray-300 bg-white shadow-[0_6px_24px_rgba(0,0,0,0.06)]">
         {/* Header */}
         <div className="flex items-center border-b border-gray-300 px-6 py-4 text-[15px] font-semibold text-yellow-400">
@@ -283,7 +283,7 @@ export default function EggSupplyPage() {
             <div className="mt-8 flex items-center justify-between">
               <button
                 onClick={closeModal}
-                className="w-[48%] rounded-lg bg-gray-300 py-3 text-center font-semibold text-white hover:opacity-90"
+                className="w-[48%] rounded-lg bg-gray-300 py-3 text-center font-semibold text-gray hover:opacity-90"
               >
                 Back
               </button>
@@ -298,7 +298,7 @@ export default function EggSupplyPage() {
         </div>
       )}
 
-      {/* NEW: "Send Egg Request" modal UI (matches screenshot) */}
+      {/* NEW: "Send Egg Request" modal UI */}
       {requestOpen && (
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center">
           <div className="absolute inset-0 bg-black/70" onClick={() => setRequestOpen(false)} />
@@ -343,11 +343,11 @@ export default function EggSupplyPage() {
               </div>
             </div>
 
-            {/* Add Egg Tray button (full width, gray bar) */}
+            {/* Add Egg Tray button */}
             <button
               type="button"
               className="mt-4 w-full rounded-lg bg-gray-300 py-3 text-center text-[16px] font-semibold text-gray-700"
-              onClick={() => {/* placeholder: add item to list */}}
+              onClick={() => { /* placeholder: add item to list */ }}
             >
               Add Egg Tray
             </button>
@@ -364,15 +364,11 @@ export default function EggSupplyPage() {
             <div className="mt-3 rounded-xl border border-gray-600">
               {/* header */}
               <div className="flex items-center border-b border-gray-600 px-5 py-3">
-                <div className="flex-1 text-lg font-semibold text-gray-800 text-center pr-36">
-                  Egg Size
-                </div>
-                <div className="w-40 text-lg font-semibold text-gray-800 text-center pr-28">
-                  Stocks
-                </div>
+                <div className="flex-1 text-lg font-semibold text-gray-800 text-center pr-36">Egg Size</div>
+                <div className="w-40 text-lg font-semibold text-gray-800 text-center pr-28">Stocks</div>
               </div>
 
-              {/* rows (placeholders to match screenshot) */}
+              {/* rows */}
               <div className="divide-y divide-gray-300">
                 {["Size", "Size", "Size"].map((label, i) => (
                   <div key={i} className="flex items-center px-5 py-3">
@@ -382,12 +378,29 @@ export default function EggSupplyPage() {
                 ))}
               </div>
             </div>
+
+            {/* Footer buttons — added */}
+            <div className="mt-4 flex items-center justify-between">
+              <button
+                onClick={() => setRequestOpen(false)}
+                className="w-[48%] rounded-lg bg-gray-300 py-3 text-center font-semibold text-white hover:opacity-90"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { alert("Request sent"); setRequestOpen(false); }}
+                className="w-[48%] rounded-lg bg-primaryYellow py-3 text-center font-semibold text-white hover:opacity-90"
+              >
+                Send Request
+              </button>
+            </div>
           </div>
         </div>
       )}
     </div>
   );
 }
+
 
 
 
