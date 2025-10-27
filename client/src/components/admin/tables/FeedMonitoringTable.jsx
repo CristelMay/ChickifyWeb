@@ -80,7 +80,6 @@ export default function FeedMonitoringTable({ refreshKey = 0 }) {
 
         {!loading && !err && rows.length === 0 && (
           <div className="px-6 py-8 text-center">
-            <div className="text-gray-400 text-4xl mb-2">📋</div>
             <div className="text-sm text-gray-500">
               No allocations yet. Start by selecting farmers and feed above.
             </div>
