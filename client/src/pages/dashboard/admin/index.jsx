@@ -8,6 +8,7 @@ import LineChart from "../../../components/Charts/Admin/LineChart";
 import BarChart from "../../../components/Charts/Admin/BarChart";
 import DonutChart from "../../../components/Charts/Admin/DonutChart";
 import PriceForecastChart from "../../../components/Charts/Admin/PriceForecastChart";
+import ProfitDonutChart from "../../../components/Charts/Admin/ProfitDonutChart";
 
 export default function AdminDashboard() {
   return (
@@ -29,6 +30,13 @@ export default function AdminDashboard() {
           icon={<LuPackageOpen className="text-6xl text-primaryYellow" />}
           data={12345}
         />
+      </div>
+
+      <div className="col-span-4 p-6 rounded-lg border border-gray-200 shadow-lg w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 place-items-center">
+          <ProfitDonutChart title="Gross Profit" centerText="₱1M" />
+          <ProfitDonutChart title="Net Profit" centerText="₱0.3M" />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -54,6 +62,7 @@ export default function AdminDashboard() {
           ))}
         </div>
       </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Customer Growth Analysis */}
         <div className="col-span-3 p-6 rounded-lg border border-gray-200 shadow-lg w-full">
@@ -65,7 +74,7 @@ export default function AdminDashboard() {
          <DonutChart/>
         </div>
 
-         <div className="col-span-4 p-6 rounded-lg border border-gray-200 shadow-lg w-full">
+        <div className="col-span-4 p-6 rounded-lg border border-gray-200 shadow-lg w-full">
           <PriceForecastChart />
         </div>
       </div>
