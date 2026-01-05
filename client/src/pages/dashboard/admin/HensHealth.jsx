@@ -2,13 +2,24 @@
 import React, { useMemo, useState } from "react";
 import ChickenPoopTab from "@/components/admin/poultry-guide/ChickenPoopTab";
 import HeatStressTab from "@/components/admin/poultry-guide/HeatStressTab";
+import ChickenPhasesTab from "../../../components/admin/poultry-guide/ChickenPhasesTab";
+import MoltingTab from "../../../components/admin/poultry-guide/MoltingTab";
+import StopLayingTab from "../../../components/admin/poultry-guide/StopLayingTab";
 
-const TABS = ["Chicken Poop", "Heat Stress: Signs + What to Do"];
+const TABS = [
+  "Chicken Phases",
+  "Molting",
+  "Why Chickens Stop Laying",
+  "Chicken Poop", 
+  "Heat Stress: Signs + What to Do"];
 
 export default function FeedGuide() {
   const [activeTab, setActiveTab] = useState(TABS[0]);
 
   const content = useMemo(() => {
+    if (activeTab === "Chicken Phases") return <ChickenPhasesTab />;
+    if (activeTab === "Molting") return <MoltingTab />;
+    if (activeTab === "Why Chickens Stop Laying") return <StopLayingTab />;
     if (activeTab === "Chicken Poop") return <ChickenPoopTab />;
     if (activeTab === "Heat Stress: Signs + What to Do") return <HeatStressTab />;
     return null;

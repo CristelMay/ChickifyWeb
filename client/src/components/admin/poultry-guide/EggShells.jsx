@@ -203,7 +203,7 @@ function EditModal({ open, onClose, draft, setDraft, onSave }) {
 
           <button
             onClick={onSave}
-            className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2 text-sm font-extrabold text-slate-900 hover:bg-yellow-300"
+            className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2 text-sm font-bold text-slate-900 hover:bg-yellow-300"
           >
             <FiCheck />
             Save

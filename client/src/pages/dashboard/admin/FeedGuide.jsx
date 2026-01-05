@@ -12,7 +12,7 @@ const TABS = [
   "Feeding Guide",
   "Recommended Feeding Time",
   "Can/Can't",
-  "Essential ingredients in feeds",
+  "Essential Feed Ingredients",
   "Water Intake Requirements",
 ];
 
@@ -1251,7 +1251,7 @@ export default function FeedGuide() {
     if (activeTab === "Feeding Guide") return <FeedGuideTable />;
     if (activeTab === "Recommended Feeding Time") return <RecommendedFeedingTimeTab />;
     if (activeTab === "Can/Can't") return <CanCantTab />;
-    if (activeTab === "Essential ingredients in feeds") return <EssentialIngredientsTab />;
+    if (activeTab === "Essential Feed Ingredients") return <EssentialIngredientsTab />;
     if (activeTab === "Water Intake Requirements") return <WaterIntakeTab />;
     return <PlaceholderTab title={activeTab} />;
   }, [activeTab]);

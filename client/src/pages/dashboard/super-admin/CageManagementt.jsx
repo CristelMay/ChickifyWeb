@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from "react";
-import HowToCleanCageTab from "@/components/admin/poultry-guide/HowToCleanCageTab";
-import WhatTimeToCleanTab from "@/components/admin/poultry-guide/WhatTimeToCleanTab";
-import CageSpaceRequirementsTab from "@/components/admin/poultry-guide/CageSpaceRequirementsTab";
-import FeederSpaceRequirementsTab from "@/components/admin/poultry-guide/FeederSpaceRequirementsTab";
-import WatererSpaceRequirementsTab from "@/components/admin/poultry-guide/WatererSpaceRequirementsTab";
-import HowmanyHeadsTab from "@/components/admin/poultry-guide/HowManyHeadsTab";
+import CleanCageTab from "@/components/super-admin/poultryguide/CleanCageTab";  
+import TimeToCleanTab from "@/components/super-admin/poultryguide/TimeToCleanTab";
+import CageSpaceTab from "@/components/super-admin/poultryguide/CageSpaceTab";
+import FeederSpaceTab from "@/components/super-admin/poultryguide/FeederSpaceTab";
+import WatererSpaceTab from "@/components/super-admin/poultryguide/WatererSpaceTab";
+import ChickenPerCageTab from "@/components/super-admin/poultryguide/ChickenPerCageTab";
+
 
 
 const TABS = [
@@ -20,12 +21,12 @@ export default function Guide() {
   const [activeTab, setActiveTab] = useState(TABS[0]);
 
   const content = useMemo(() => {
-    if (activeTab === "Cage Maintenance") return <HowToCleanCageTab />;
-    if (activeTab === "Cleaning Time") return <WhatTimeToCleanTab />;
-    if (activeTab === "Cage Space") return <CageSpaceRequirementsTab />;
-    if (activeTab === "Feeder Space") return <FeederSpaceRequirementsTab />;
-    if (activeTab === "Waterer Space") return <WatererSpaceRequirementsTab />;
-    if (activeTab === "Heads per Cage") return <HowmanyHeadsTab />;
+    if (activeTab === "Cage Maintenance") return <CleanCageTab />;
+    if (activeTab === "Cleaning Time") return <TimeToCleanTab />;
+    if (activeTab === "Cage Space") return <CageSpaceTab />;
+    if (activeTab === "Feeder Space") return <FeederSpaceTab />;
+    if (activeTab === "Waterer Space") return <WatererSpaceTab />;
+    if (activeTab === "Heads per Cage") return <ChickenPerCageTab />;
 
     return null;
   }, [activeTab]);

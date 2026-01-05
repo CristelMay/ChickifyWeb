@@ -146,7 +146,7 @@ export const sidebarItems = [
     {
       label: "Feeds",
       path: {
-        "super-admin": "/super-admin/feeds",
+        "super-admin": "/super-admin/feed",
         admin: "/admin/feeds",
       },
       roles: ["super-admin", "admin"],
@@ -154,7 +154,7 @@ export const sidebarItems = [
     {
       label: "All About Eggs",
       path: {
-        "super-admin": "/super-admin/egg-handling",
+        "super-admin": "/super-admin/allaboutegg",
         admin: "/admin/allabouteggs",
       },
       roles: ["super-admin", "admin"],
@@ -162,7 +162,7 @@ export const sidebarItems = [
     {
       label: "Cage Management",
       path: {
-        "super-admin": "/super-admin/environment",
+        "super-admin": "/super-admin/cagemanagementt",
         admin: "/admin/cagemanagement",
       },
       roles: ["super-admin", "admin"],
@@ -170,7 +170,7 @@ export const sidebarItems = [
     {
       label: "Hen's Health",
       path: {
-        "super-admin": "/super-admin/hens-health",
+        "super-admin": "/super-admin/henhealth",
         admin: "/admin/henshealth",
       },
       roles: ["super-admin", "admin"],

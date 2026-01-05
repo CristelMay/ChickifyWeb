@@ -1,10 +1,10 @@
 
 import React, { useMemo, useState } from "react";
-import EggFormationTab from "@/components/admin/poultry-guide/EggFormationTab";
-import YolkColorTab from "@/components/admin/poultry-guide/YolkColorTab";
-import EggShells from "@/components/admin/poultry-guide/EggShells";
-import DirtyEggsTab from "@/components/admin/poultry-guide/DirtyEggsTab";
-import EggHandlingTab from "@/components/admin/poultry-guide/EggHandlingTab";
+import FormationEggTab from "@/components/super-admin/poultryguide/FormationEggTab";
+import YolkColorrTab from "@/components/super-admin/poultryguide/YolkColorrTab";
+import EggShellTab from "@/components/super-admin/poultryguide/EggShellTab";
+import DirtyEggTab from "@/components/super-admin/poultryguide/DirtyEggTab";
+import EggHandlinggTab from "@/components/super-admin/poultryguide/EggHandlinggTab";
 
 
 const TABS = [
@@ -19,12 +19,11 @@ export default function Guide() {
   const [activeTab, setActiveTab] = useState(TABS[0]);
 
   const content = useMemo(() => {
-    if (activeTab === "Egg Formation") return <EggFormationTab />;
-    if (activeTab === "Yolk Color") return <YolkColorTab />;
-    if (activeTab === "Soft/Thin Egg Shells") return <EggShells />;
-    if (activeTab === "Dirty Eggs") return <DirtyEggsTab />;
-    if (activeTab === "Egg Handling") return <EggHandlingTab />;
-
+    if (activeTab === "Egg Formation") return <FormationEggTab />;
+    if (activeTab === "Yolk Color") return <YolkColorrTab />;
+    if (activeTab === "Soft/Thin Egg Shells") return <EggShellTab />;
+    if (activeTab === "Dirty Eggs") return <DirtyEggTab />;
+    if (activeTab === "Egg Handling") return <EggHandlinggTab />;
     return (
       <div className="rounded-2xl bg-white p-8 shadow-[0_10px_30px_rgba(15,23,42,0.06)] ring-1 ring-slate-200">
         <div className="text-lg font-semibold text-slate-800">{activeTab}</div>

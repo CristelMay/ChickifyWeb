@@ -9,7 +9,7 @@ import {
   Home, SignIn, SignUp,
   // SuperAdmin
   ProductManagement, SuperAdminDashboard, UserManagement, Orders,
-  PricingManagement, ActivityLogs, Reports, Settings,
+  PricingManagement, ActivityLogs, Reports, Settings, FeedGuidee, CageManagementt, HenHealth, AllAboutEgg,
   // Admin
   AdminDashboard, AdminUserManagement, ProductDetails, DiscountManagement,
   OrderStatus, Complaints, PayoutRequest, AdminReports, ServicePlan, CoopContract, FeedGuide, CageManagement, AllAboutEggs, HensHealth, AdminSettings} from "./pages";
@@ -74,6 +74,11 @@ export default function App() {
               <Route path="settings" element={<Settings />} />
               <Route path="settings" element={<Settings />} />
               <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="feed" element={<FeedGuidee />} />    
+              <Route path="cagemanagementt" element={<CageManagementt />} />
+              <Route path="allaboutegg" element={<AllAboutEgg />} />
+              <Route path="henhealth" element={<HenHealth />} />
+
 
             </Route>
           </Route>

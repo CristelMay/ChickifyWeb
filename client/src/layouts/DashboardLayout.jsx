@@ -476,6 +476,10 @@ export default function DashboardLayout() {
     "/super-admin/users/view-users": "Admin's Profile",
     "/super-admin/users/edit-users": "Edit Admin's Profile",
     "/super-admin/notifications": "Notifications",
+    "/super-admin/feed": "Feeds",
+    "/super-admin/cagemanagementt": "Cage Management",
+    "/super-admin/allaboutegg": "All About Eggs",
+    "/super-admin/henhealth": "Hen's Health",
 
     // admin
     "/admin/notifications": "Notifications",

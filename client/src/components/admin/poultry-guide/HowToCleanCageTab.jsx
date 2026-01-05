@@ -81,7 +81,7 @@ export default function HowToCleanCageTab() {
             </div>
 
             <div>
-              <div className="text-lg font-extrabold text-slate-900">
+              <div className="text-lg font-bold text-slate-900">
                 {data.title}
               </div>
               <div className="mt-0.5 text-[15px] font-medium text-slate-500">

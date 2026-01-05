@@ -1,7 +1,14 @@
-// src/pages/dashboard/admin/poultry-guide/tabs/FeederSpaceRequirementsTab.jsx
+// src/pages/dashboard/admin/poultry-guide/tabs/HeadsPerCageTab.jsx
 import React, { useState } from "react";
-import { LuWheat } from "react-icons/lu";
-import { FiEdit2, FiX, FiCheck, FiPlus, FiTrash2 } from "react-icons/fi";
+import { LuUsers } from "react-icons/lu";
+import {
+  FiEdit2,
+  FiX,
+  FiCheck,
+  FiPlus,
+  FiTrash2,
+  FiAlertTriangle,
+} from "react-icons/fi";
 
 function deepCopy(obj) {
   return JSON.parse(JSON.stringify(obj));
@@ -12,17 +19,18 @@ function autoGrowTextarea(e) {
   e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
 }
 
-export default function FeederSpaceRequirementsTab() {
+export default function HeadsPerCageTab() {
   const [data, setData] = useState(() => ({
-    title: "Feeder space requirements",
-    subtitle: "guide from DA",
+    title: "How many heads per cage",
+    subtitle: "Use a quick formula",
     bullets: [
-      "Feeding space (minimum): Day-old to 4 weeks — 2.5 to 5 cm/bird.",
-      "Feeding space (minimum): 4 to 8 weeks — 5 to 6.5 cm/bird.",
-      "Feeding space (minimum): 9 weeks to near laying age — 7.5 to 9 cm/bird.",
-      "Feeding space (layers): 10 cm/bird.",
+      "Step 1: compute cage floor area = width(cm) × depth(cm).",
+      "Step 2: choose your space/hen (cm²) based on your coop standard.",
+      "Heads per cage = floor(area ÷ spacePerHen).",
+      "Example: 50×45cm = 2,250cm². If 750cm²/hen → 3 hens.",
     ],
-    warning: "",
+    warning:
+      "If birds are large or you see feather pecking / heat stress, reduce heads per cage.",
   }));
 
   const [openEdit, setOpenEdit] = useState(false);
@@ -67,7 +75,7 @@ export default function FeederSpaceRequirementsTab() {
           <div className="flex items-start gap-3">
             {/* icon square */}
             <div className="mt-0.5 grid h-11 w-11 place-items-center rounded-2xl bg-yellow-100 text-yellow-800 ring-1 ring-yellow-200">
-              <LuWheat className="text-[20px]" />
+              <LuUsers className="text-[20px]" />
             </div>
 
             <div>
@@ -98,6 +106,16 @@ export default function FeederSpaceRequirementsTab() {
             </li>
           ))}
         </ul>
+
+        {/* warning */}
+        {!!data.warning?.trim() && (
+          <div className="mt-6 rounded-2xl border border-yellow-200 bg-yellow-50 p-4">
+            <div className="flex items-start gap-3 text-[15px] text-slate-700">
+              <FiAlertTriangle className="mt-0.5 text-[18px] text-yellow-700" />
+              <div className="leading-7">{data.warning}</div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ✅ HORIZONTAL COMPACT MODAL */}
@@ -110,7 +128,7 @@ export default function FeederSpaceRequirementsTab() {
                 <div className="text-base font-extrabold text-slate-900">
                   Edit
                 </div>
-                <div className="mt-0.5 text-[15px] text-slate-500">
+                <div className="mt-0.5 text-[12px] text-slate-500">
                   {data.title}
                 </div>
               </div>
@@ -196,10 +214,10 @@ export default function FeederSpaceRequirementsTab() {
                 ))}
               </div>
 
-              {/* Optional warning (kept for future use) */}
+              {/* Warning */}
               <div className="mt-4">
                 <div className="text-[12px] font-bold text-slate-800">
-                  Warning / Note (optional)
+                  Warning / Note
                 </div>
                 <textarea
                   value={draft.warning || ""}

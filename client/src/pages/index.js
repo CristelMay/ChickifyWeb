@@ -34,4 +34,8 @@ export { default as PricingManagement } from "./dashboard/super-admin/PricingMan
 export { default as ActivityLogs } from "./dashboard/super-admin/ActivityLogs"
 export { default as Reports } from "./dashboard/super-admin/Reports"
 export { default as Settings } from "./dashboard/super-admin/Settings"
+export { default as FeedGuidee } from "./dashboard/super-admin/FeedGuidee"
+export { default as CageManagementt } from "./dashboard/super-admin/CageManagementt"
+export { default as AllAboutEgg } from "./dashboard/super-admin/AllAboutEgg"
+export { default as HenHealth } from "./dashboard/super-admin/HenHealth"
 

@@ -1,6 +1,7 @@
-// src/components/admin/poultry-guide/ChickenPoopTab.jsx
 import React, { useMemo, useState } from "react";
 import { FiEdit2, FiX, FiCheck, FiPlus, FiTrash2 } from "react-icons/fi";
+import { LuDroplet } from "react-icons/lu";
+
 
 function deepCopy(obj) {
   return JSON.parse(JSON.stringify(obj));
@@ -185,9 +186,7 @@ function EditModal({ open, onClose, draft, setDraft, onSave }) {
             <div className="text-base font-bold text-slate-900">
               Edit Chicken Poop Guide
             </div>
-            <div className="text-xs text-slate-600">
-              UI only — saves to local state.
-            </div>
+           
           </div>
 
           <button
@@ -469,24 +468,33 @@ export default function ChickenPoopTab() {
     <div>
       {/* Header row */}
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="text-xl font-extrabold text-slate-900">
-            {data.header.title}
-          </div>
+  <div className="min-w-[260px]">
+    <div className="flex items-center gap-3">
+      <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-yellow-50 ring-1 ring-yellow-200">
+        <LuDroplet className="text-xl text-yellow-700" />
+      </div>
 
-          <div className="mt-1 text-sm text-slate-600">
-            Quick visual guide for common droppings — focus on patterns, not one off.
-          </div>
+      <div>
+        <div className="text-xl font-extrabold text-slate-900">
+          {data.header.title}
         </div>
 
-        <button
-          onClick={open}
-          className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2 text-sm font-bold text-slate-900 hover:bg-yellow-300"
-        >
-          <FiEdit2 />
-          Edit
-        </button>
+        <div className="mt-1 text-sm text-slate-600">
+          Quick visual guide for common droppings — focus on patterns, not one off.
+        </div>
       </div>
+    </div>
+  </div>
+
+  <button
+    onClick={open}
+    className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2 text-sm font-bold text-slate-900 hover:bg-yellow-300"
+  >
+    <FiEdit2 />
+    Edit
+  </button>
+</div>
+
 
       {/* Notes + alert */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5">

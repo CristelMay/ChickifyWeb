@@ -1,38 +1,35 @@
+// src/pages/admin/FeedGuide.jsx
 import React, { useMemo, useState } from "react";
-import HowToCleanCageTab from "@/components/admin/poultry-guide/HowToCleanCageTab";
-import WhatTimeToCleanTab from "@/components/admin/poultry-guide/WhatTimeToCleanTab";
-import CageSpaceRequirementsTab from "@/components/admin/poultry-guide/CageSpaceRequirementsTab";
-import FeederSpaceRequirementsTab from "@/components/admin/poultry-guide/FeederSpaceRequirementsTab";
-import WatererSpaceRequirementsTab from "@/components/admin/poultry-guide/WatererSpaceRequirementsTab";
-import HowmanyHeadsTab from "@/components/admin/poultry-guide/HowManyHeadsTab";
+import ChickenDroppingsTab from "@/components/super-admin/poultryguide/ChickenDroppingsTab";
+import HeatStresssTab from "@/components/super-admin/poultryguide/HeatStresssTab";
+import ChickenPhaseTab from "../../../components/super-admin/poultryguide/ChickenPhaseTab";
+import MoltingsTab from "../../../components/super-admin/poultryguide/MoltingsTab";
+import StopLayinggTab from "../../../components/super-admin/poultryguide/StopLayinggTab";
 
 
 const TABS = [
-  "Cage Maintenance",
-  "Cleaning Time",
-  "Cage Space",
-  "Feeder Space",
-  "Waterer Space",
-  "Heads per Cage",
-];
+  "Chicken Phases",
+  "Molting",
+  "Why Chickens Stop Laying",
+  "Chicken Poop", 
+  "Heat Stress: Signs + What to Do"];
 
-export default function Guide() {
+export default function FeedGuide() {
   const [activeTab, setActiveTab] = useState(TABS[0]);
 
   const content = useMemo(() => {
-    if (activeTab === "Cage Maintenance") return <HowToCleanCageTab />;
-    if (activeTab === "Cleaning Time") return <WhatTimeToCleanTab />;
-    if (activeTab === "Cage Space") return <CageSpaceRequirementsTab />;
-    if (activeTab === "Feeder Space") return <FeederSpaceRequirementsTab />;
-    if (activeTab === "Waterer Space") return <WatererSpaceRequirementsTab />;
-    if (activeTab === "Heads per Cage") return <HowmanyHeadsTab />;
-
+    if (activeTab === "Chicken Phases") return <ChickenPhaseTab />;
+    if (activeTab === "Molting") return <MoltingsTab />;
+    if (activeTab === "Why Chickens Stop Laying") return <StopLayinggTab />;
+    if (activeTab === "Chicken Poop") return <ChickenDroppingsTab />;
+    if (activeTab === "Heat Stress: Signs + What to Do") return <HeatStresssTab />;
     return null;
   }, [activeTab]);
 
   return (
     <div className="min-h-screen bg-slate-50 px-6 py-8">
       <div className="mx-auto w-full max-w-7xl">
+        {/* Tabs */}
         <div className="flex flex-wrap gap-2">
           {TABS.map((t) => {
             const active = activeTab === t;
@@ -55,12 +52,15 @@ export default function Guide() {
                 ].join(" ")}
               >
                 {t}
-                {active && <span className="absolute left-0 right-0 -bottom-[10px] h-[12px] bg-white" />}
+                {active && (
+                  <span className="absolute left-0 right-0 -bottom-[10px] h-[12px] bg-white" />
+                )}
               </button>
             );
           })}
         </div>
 
+        {/* Main Card */}
         <div className="rounded-2xl bg-white p-8 shadow-[0_10px_30px_rgba(15,23,42,0.06)] ring-1 ring-slate-200">
           {content}
         </div>

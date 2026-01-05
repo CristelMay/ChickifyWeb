@@ -1,7 +1,6 @@
-// src/components/admin/poultry-guide/HeatStressTab.jsx
 import React, { useMemo, useState } from "react";
-import { FiEdit2, FiX, FiCheck, FiPlus, FiTrash2 } from "react-icons/fi";
-import { LuChevronDown, LuChevronUp, LuThermometerSun } from "react-icons/lu";
+import { FiEdit2, FiX, FiCheck, FiPlus, FiTrash2, FiInfo } from "react-icons/fi";
+import { LuFeather, LuChevronDown, LuChevronUp } from "react-icons/lu";
 
 function deepCopy(obj) {
   return JSON.parse(JSON.stringify(obj));
@@ -12,7 +11,7 @@ function autoGrowTextarea(e) {
   e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
 }
 
-function makeKey(prefix = "heat") {
+function makeKey(prefix = "molt") {
   return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
 
@@ -33,66 +32,41 @@ const STATUS_STYLES = {
 
 const DEFAULT_DATA = {
   header: {
-    title: "Heat stress: signs + what to do",
-    tag: "Hot weather",
+    title: "Molting: how to spot it",
+    tag: "Seasonal",
   },
   bullets: [
-    "Early signs: open-mouth panting, faster breathing, wings held away from body.",
-    "Behavior: less movement, more resting, reduced feed intake, drinking more water.",
-    "Physical: pale comb/wattles, weakness/limp posture.",
-    "Egg impact: fewer eggs + thinner shells because birds eat less.",
-    "Do now: shade, ventilation, cool clean water (multiple points), electrolytes if available.",
-    "Emergency: limp/unresponsive = cool immediately (cool water, not ice; avoid soaking head).",
+    "Patchy feather loss (often starts head/neck then moves down body).",
+    "Egg production drops or stops—molting uses lots of protein/energy.",
+    "Pin feathers appear as spiky “quills” (new growth) and can be painful.",
+    "More feathers on the coop floor (looks like pillow fight).",
+    "Support: minimize stress, keep routine stable, ensure good protein + clean water.",
   ],
   alert:
-    "If a chicken becomes limp/unconscious, treat it as an emergency and cool immediately.",
+    "If feather loss + intense itching/scabs that don’t regrow, check mites/lice.",
   items: [
     {
-      key: "panting",
-      title: "Open-mouth panting",
+      key: "patchy",
+      title: "Patchy molt",
       status: "Watch",
       description:
-        "Bird breathes with open beak and faster breathing to release heat. Provide shade and airflow.",
+        "Feather loss around neck/body is common. Egg production usually drops or stops.",
       imageUrl: "",
     },
     {
-      key: "wings",
-      title: "Wings held out",
+      key: "heavy",
+      title: "Heavy feather drop",
       status: "Watch",
       description:
-        "Cooling posture: wings away from body to release heat. Improve ventilation and reduce crowding.",
+        "Can be normal molt. If itching is extreme, check for mites/lice too.",
       imageUrl: "",
     },
     {
-      key: "lethargy",
-      title: "Lethargy / weak posture",
+      key: "pin",
+      title: "Pin feathers",
       status: "Watch",
       description:
-        "Less movement, sitting more, looks tired. Offer cool water and place in shaded area.",
-      imageUrl: "",
-    },
-    {
-      key: "palecomb",
-      title: "Pale comb/wattles",
-      status: "Watch",
-      description:
-        "Can indicate stress and reduced circulation. Monitor closely and cool environment.",
-      imageUrl: "",
-    },
-    {
-      key: "eggdrop",
-      title: "Egg drop / thin shells",
-      status: "Watch",
-      description:
-        "Heat reduces appetite and calcium intake. Ensure access to water and minerals; cool the coop.",
-      imageUrl: "",
-    },
-    {
-      key: "collapse",
-      title: "Collapse / unresponsive",
-      status: "Urgent",
-      description:
-        "Emergency. Cool immediately using cool water (not ice). Keep airway clear and consult a vet.",
+        "New feather growth looks like spikes/quills and can be tender or painful.",
       imageUrl: "",
     },
   ],
@@ -135,6 +109,51 @@ function PhotoBox({ imageUrl, title }) {
   );
 }
 
+/* -------------------- Info Modal (card details) -------------------- */
+function InfoModal({ open, onClose, item }) {
+  if (!open || !item) return null;
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/45 p-4">
+      <div className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4">
+          <div className="text-base font-bold text-slate-900">{item.title}</div>
+          <button
+            onClick={onClose}
+            className="rounded-xl p-2 text-slate-600 hover:bg-white hover:text-slate-900 ring-1 ring-slate-200"
+            aria-label="Close"
+          >
+            <FiX />
+          </button>
+        </div>
+
+        <div className="px-5 py-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm font-semibold text-slate-700">Status</div>
+            <Pill status={item.status} />
+          </div>
+
+          <div className="mt-3">
+            <PhotoBox imageUrl={item.imageUrl} title={item.title} />
+          </div>
+
+          <div className="mt-4 text-sm text-slate-700">{item.description}</div>
+        </div>
+
+        <div className="border-t border-slate-200 bg-white px-5 py-4">
+          <button
+            onClick={onClose}
+            className="w-full rounded-xl bg-yellow-400 px-4 py-2 text-sm font-bold text-slate-900 hover:bg-yellow-300"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------- Edit Modal -------------------- */
 function EditModal({ open, onClose, draft, setDraft, onSave }) {
   if (!open) return null;
 
@@ -142,7 +161,7 @@ function EditModal({ open, onClose, draft, setDraft, onSave }) {
     const next = deepCopy(draft);
     next.items.push({
       key: makeKey(),
-      title: "New sign",
+      title: "New example",
       status: "Watch",
       description: "",
       imageUrl: "",
@@ -163,7 +182,7 @@ function EditModal({ open, onClose, draft, setDraft, onSave }) {
         <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4">
           <div>
             <div className="text-base font-bold text-slate-900">
-              Edit Heat Stress Guide
+              Edit Molting Guide
             </div>
           </div>
 
@@ -194,22 +213,22 @@ function EditModal({ open, onClose, draft, setDraft, onSave }) {
                 />
               </div>
               <div className="grid gap-1">
-                <label className="text-xs font-semibold text-slate-600">Tag</label>
+                {/* <label className="text-xs font-semibold text-slate-600">Tag (chip)</label>
                 <input
                   value={draft.header.tag}
                   onChange={(e) =>
                     setDraft({ ...draft, header: { ...draft.header, tag: e.target.value } })
                   }
-                  placeholder="e.g. Hot weather"
+                  placeholder="e.g. Seasonal"
                   className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-yellow-200"
-                />
+                /> */}
               </div>
             </div>
           </div>
 
-          {/* Bullets + Alert */}
+          {/* Bullets */}
           <div className="mt-5 rounded-2xl border border-slate-200 p-4">
-            <div className="text-sm font-bold text-slate-800">Key Notes</div>
+            <div className="text-sm font-bold text-slate-800">Bullets</div>
 
             <div className="mt-3 grid gap-3">
               {draft.bullets.map((b, idx) => (
@@ -230,24 +249,28 @@ function EditModal({ open, onClose, draft, setDraft, onSave }) {
                   />
                 </div>
               ))}
-
-              <div className="grid gap-1">
-                <label className="text-xs font-semibold text-slate-600">Emergency Alert</label>
-                <textarea
-                  value={draft.alert}
-                  onChange={(e) => setDraft({ ...draft, alert: e.target.value })}
-                  onInput={autoGrowTextarea}
-                  rows={2}
-                  className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-yellow-200"
-                />
-              </div>
             </div>
           </div>
 
-          {/* Items */}
+          {/* Alert */}
+          <div className="mt-5 rounded-2xl border border-slate-200 p-4">
+            <div className="text-sm font-bold text-slate-800">Warning Box</div>
+            <div className="mt-3 grid gap-1">
+              <label className="text-xs font-semibold text-slate-600">Alert text</label>
+              <textarea
+                value={draft.alert}
+                onChange={(e) => setDraft({ ...draft, alert: e.target.value })}
+                onInput={autoGrowTextarea}
+                rows={2}
+                className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-yellow-200"
+              />
+            </div>
+          </div>
+
+          {/* Cards */}
           <div className="mt-5 rounded-2xl border border-slate-200 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="text-sm font-bold text-slate-800">Signs Cards</div>
+              <div className="text-sm font-bold text-slate-800">Cards</div>
               <button
                 type="button"
                 onClick={addItem}
@@ -262,18 +285,7 @@ function EditModal({ open, onClose, draft, setDraft, onSave }) {
               {draft.items.map((it, idx) => (
                 <div key={it.key} className="rounded-2xl border border-slate-200 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <div className="text-sm font-bold text-slate-900">Item {idx + 1}</div>
-                      <button
-                        type="button"
-                        onClick={() => removeItem(idx)}
-                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                        title="Remove this item"
-                      >
-                        <FiTrash2 />
-                        Remove
-                      </button>
-                    </div>
+                    <div className="text-sm font-bold text-slate-900">Item {idx + 1}</div>
 
                     <div className="flex items-center gap-2">
                       <label className="text-xs font-semibold text-slate-600">Status</label>
@@ -290,6 +302,15 @@ function EditModal({ open, onClose, draft, setDraft, onSave }) {
                         <option>Watch</option>
                         <option>Urgent</option>
                       </select>
+
+                      <button
+                        type="button"
+                        onClick={() => removeItem(idx)}
+                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      >
+                        <FiTrash2 />
+                        Remove
+                      </button>
                     </div>
                   </div>
 
@@ -411,11 +432,14 @@ function EditModal({ open, onClose, draft, setDraft, onSave }) {
   );
 }
 
-export default function HeatStressTab() {
+export default function MoltingTab() {
   const [data, setData] = useState(DEFAULT_DATA);
   const [openEdit, setOpenEdit] = useState(false);
   const [draft, setDraft] = useState(() => deepCopy(DEFAULT_DATA));
   const [expanded, setExpanded] = useState(true);
+
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [infoItem, setInfoItem] = useState(null);
 
   const open = () => {
     setDraft(deepCopy(data));
@@ -429,7 +453,7 @@ export default function HeatStressTab() {
     setOpenEdit(false);
   };
 
-  const ordered = useMemo(() => data.items, [data.items]);
+  const items = useMemo(() => data.items, [data.items]);
 
   return (
     <div>
@@ -438,7 +462,7 @@ export default function HeatStressTab() {
         <div className="min-w-[260px]">
           <div className="flex items-center gap-3">
             <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-yellow-50 ring-1 ring-yellow-200">
-              <LuThermometerSun className="text-xl text-yellow-700" />
+              <LuFeather className="text-xl text-yellow-700" />
             </div>
 
             <div>
@@ -446,15 +470,16 @@ export default function HeatStressTab() {
                 <div className="text-xl font-bold text-slate-900">
                   {data.header.title}
                 </div>
+
                 {/* {data.header.tag ? (
-                  <span className="rounded-full bg-yellow-100 px-2.5 py-1 text-[11px] font-bold text-yellow-800 ring-1 ring-yellow-200">
+                  <span className="rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-700 ring-1 ring-slate-200">
                     {data.header.tag}
                   </span>
                 ) : null} */}
               </div>
 
               <div className="mt-1 text-sm text-slate-600">
-                Quick checklist for hot days — respond early to prevent collapse.
+                Molting is common; focus on support and watch for parasites.
               </div>
             </div>
           </div>
@@ -482,7 +507,7 @@ export default function HeatStressTab() {
 
       {!expanded ? null : (
         <>
-          {/* Notes + alert */}
+          {/* Bullets */}
           <div className="rounded-2xl border border-slate-200 bg-white p-5">
             <ul className="grid gap-2 text-sm text-slate-700">
               {data.bullets.map((b, idx) => (
@@ -493,14 +518,15 @@ export default function HeatStressTab() {
               ))}
             </ul>
 
+            {/* Warning box */}
             <div className="mt-4 rounded-xl bg-yellow-50 p-4 text-sm text-slate-800 ring-1 ring-yellow-200">
-              <span className="font-bold">Emergency:</span> {data.alert}
+              <span className="font-bold">Note:</span> {data.alert}
             </div>
           </div>
 
           {/* Cards */}
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {ordered.map((it) => (
+            {items.map((it) => (
               <div
                 key={it.key}
                 className="group rounded-2xl bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)] ring-1 ring-slate-200 transition hover:-translate-y-[1px] hover:shadow-[0_12px_28px_rgba(15,23,42,0.08)]"
@@ -509,21 +535,36 @@ export default function HeatStressTab() {
                   <div className="text-base font-extrabold text-slate-900">
                     {it.title}
                   </div>
-                  <Pill status={it.status} />
+                  {/* <Pill status={it.status} /> */}
                 </div>
 
                 <div className="mt-3">
                   <PhotoBox imageUrl={it.imageUrl} title={it.title} />
                 </div>
 
-                <div className="mt-3 text-sm text-slate-700">{it.description}</div>
+                <div className="mt-3 text-sm text-slate-700 line-clamp-2">
+                  {it.description}
+                </div>
+
+                {/* <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={() => {
+                      setInfoItem(it);
+                      setInfoOpen(true);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-100"
+                  >
+                    <FiInfo />
+                    Info
+                  </button>
+                </div> */}
               </div>
             ))}
           </div>
         </>
       )}
 
-      {/* Edit modal */}
+      {/* Modals */}
       <EditModal
         open={openEdit}
         onClose={close}
@@ -531,6 +572,12 @@ export default function HeatStressTab() {
         setDraft={setDraft}
         onSave={save}
       />
+
+      <InfoModal
+        open={infoOpen}
+        onClose={() => setInfoOpen(false)}
+        item={infoItem}
+      />
     </div>
-  );
+  );    
 }
