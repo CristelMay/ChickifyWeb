@@ -36,6 +36,7 @@ export default function PayoutRequest() {
                 selectedOption === data
                   ? "text-primaryYellow font-semibold border-b-4 border-primaryYellow"
                   : "text-gray-400"
+                  // : "text-black"
               }`}
             >
               {data}

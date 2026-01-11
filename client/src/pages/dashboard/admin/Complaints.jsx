@@ -30,6 +30,7 @@ export default function Complaints() {
                 selectedOption === data
                   ? "text-primaryYellow font-semibold border-b-4 border-primaryYellow"
                   : "text-gray-400"
+                  // : "text-black"
               }`}
             >
               {data}
@@ -63,6 +64,7 @@ export default function Complaints() {
           >
             Approve
           </div>
+          
 
           {/* Reject → let table decide if modal should open (needs checkbox selected) */}
           <div

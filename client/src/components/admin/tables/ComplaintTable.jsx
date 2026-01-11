@@ -546,8 +546,15 @@ export default function ComplaintTable({ selectedOption, date = "all" }) {
         {dateFiltered.map((item, index) => (
           <tr
             key={item.refundId}
-            className="bg-yellow-100 text-gray-700 rounded-lg shadow-sm transition"
-          >
+            className="bg-yellow-100 text-gray-700 rounded-lg shadow-sm transition">
+          {
+          /* <tr
+  key={item.refundId}
+  className={`text-gray-700 rounded-lg shadow-sm transition
+    ${index % 2 === 0 ? "bg-yellow-50" : "bg-yellow-100"}
+    hover:bg-yellow-200`}
+>
+</tr> */}
             <td className="px-4 py-3 text-center font-medium">
               {item.refundId}
             </td>

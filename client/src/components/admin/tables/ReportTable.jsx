@@ -1250,6 +1250,18 @@ Array.from(moneyCols).forEach((colIdx) => {
             key={index}
             className="bg-[#faf4df] text-gray-700 rounded-lg shadow-sm"
           >
+
+            {/* className={`text-gray-700 rounded-lg shadow-sm ${
+              index % 2 === 0 ? "bg-pink-200" : "bg-orange-200"
+            }`} */}
+
+            {/* <tr
+  key={index}
+  className={`text-gray-700 rounded-lg shadow-sm
+    ${index % 2 === 0 ? "bg-[#faf4df]" : "bg-white"}
+    hover:bg-yellow-50`}
+> */}
+
             {/* Payout History */}
             {selectedOption === "Payout History" && (
               <>

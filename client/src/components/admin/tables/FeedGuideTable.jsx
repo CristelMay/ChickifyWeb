@@ -1,311 +1,734 @@
-import React, { useMemo, useState } from "react";
-import { FiEdit2, FiX } from "react-icons/fi";
+// src/components/admin/tables/FeedGuideTable.jsx
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  FiEdit2,
+  FiX,
+  FiCheck,
+  FiPlus,
+  FiTrash2,
+  FiRefreshCw,
+} from "react-icons/fi";
+import { supabase } from "@/lib/supabase";
 
-const PAGE_SIZE = 9;
+/**
+ * ✅ UI stays the same (header, dropdowns, table look).
+ * ✅ Fixes:
+ *  - Editing remarks no longer INSERTs (uses UPDATE for existing step_id)
+ *  - Locks week (cannot change week)
+ *  - Prevents duplicate week in draft (avoids uq_feed_program_week)
+ *  - Adds new rows safely (auto next week, week locked)
+ *  - Clear error banner like your screenshot
+ */
 
-// ✅ 9+ rows so pagination shows next page
-const INITIAL_ROWS = [
-  { week: 1, feedName: "Chick Starter", gramsPerHead: 25.0, mealsPerDay: 4, lightingHrs: 22.0, remarks: "Intro" },
-  { week: 2, feedName: "Chick Starter", gramsPerHead: 30.0, mealsPerDay: 4, lightingHrs: 22.0, remarks: "" },
-  { week: 3, feedName: "Chick Starter", gramsPerHead: 35.0, mealsPerDay: 4, lightingHrs: 20.0, remarks: "" },
-  { week: 4, feedName: "Chick Starter", gramsPerHead: 40.0, mealsPerDay: 4, lightingHrs: 20.0, remarks: "" },
-  { week: 5, feedName: "Chick Starter", gramsPerHead: 45.0, mealsPerDay: 4, lightingHrs: 19.0, remarks: "" },
-  { week: 6, feedName: "Chick Starter", gramsPerHead: 50.0, mealsPerDay: 4, lightingHrs: 18.0, remarks: "" },
-  { week: 7, feedName: "Chick Starter", gramsPerHead: 55.0, mealsPerDay: 4, lightingHrs: 18.0, remarks: "" },
-  { week: 8, feedName: "Grower", gramsPerHead: 60.0, mealsPerDay: 3, lightingHrs: 17.0, remarks: "" },
-  { week: 9, feedName: "Grower", gramsPerHead: 65.0, mealsPerDay: 3, lightingHrs: 17.0, remarks: "" },
-
-  // page 2
-  { week: 10, feedName: "Grower", gramsPerHead: 70.0, mealsPerDay: 3, lightingHrs: 17.0, remarks: "" },
-  { week: 11, feedName: "Grower", gramsPerHead: 72.0, mealsPerDay: 3, lightingHrs: 16.5, remarks: "" },
-  { week: 12, feedName: "Grower", gramsPerHead: 74.0, mealsPerDay: 3, lightingHrs: 16.5, remarks: "" },
-  { week: 13, feedName: "Grower", gramsPerHead: 76.0, mealsPerDay: 3, lightingHrs: 16.0, remarks: "" },
-  { week: 14, feedName: "Grower", gramsPerHead: 78.0, mealsPerDay: 3, lightingHrs: 16.0, remarks: "" },
-  { week: 15, feedName: "Grower", gramsPerHead: 80.0, mealsPerDay: 3, lightingHrs: 16.0, remarks: "" },
-  { week: 16, feedName: "Grower", gramsPerHead: 82.0, mealsPerDay: 3, lightingHrs: 16.0, remarks: "" },
-  { week: 17, feedName: "Grower", gramsPerHead: 84.0, mealsPerDay: 3, lightingHrs: 16.0, remarks: "" },
-  { week: 18, feedName: "Grower", gramsPerHead: 85.0, mealsPerDay: 3, lightingHrs: 16.0, remarks: "Transition to layer" },
-];
-
-function format2(n) {
-  const x = Number(n);
-  if (!Number.isFinite(x)) return "-";
-  return x.toFixed(2);
+function deepCopy(obj) {
+  return JSON.parse(JSON.stringify(obj));
 }
 
-function Field({ label, children }) {
+function asInt(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.trunc(n) : null;
+}
+
+function asNum(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function pickLabel(row) {
+  if (!row) return "";
   return (
-    <div>
-      <label className="mb-1 block text-sm font-semibold text-slate-600">
-        {label}
-      </label>
-      {children}
-    </div>
+    row.title ??
+    row.name ??
+    row.label ??
+    row.feed_type_name ??
+    row.display_name ??
+    row.code ??
+    String(row.feed_type_id ?? row.id ?? "")
   );
 }
 
 export default function FeedGuideTable() {
-  const [rows, setRows] = useState(INITIAL_ROWS);
+  const [programs, setPrograms] = useState([]);
+  const [programId, setProgramId] = useState("");
+  const [feedTypes, setFeedTypes] = useState([]);
 
-  // ✅ pagination
-  const [page, setPage] = useState(1);
+  const [rows, setRows] = useState([]);
+  const [filterWeek, setFilterWeek] = useState("");
 
-  // ✅ modal
-  const [open, setOpen] = useState(false);
-  const [editingIndex, setEditingIndex] = useState(null);
-  const [form, setForm] = useState({
-    week: "",
-    feedName: "",
-    gramsPerHead: "",
-    mealsPerDay: "",
-    lightingHrs: "",
-    remarks: "",
-  });
+  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
 
-  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
+  const [openEdit, setOpenEdit] = useState(false);
+  const [draft, setDraft] = useState([]);
+  const [deletedIds, setDeletedIds] = useState([]);
 
-  const paged = useMemo(() => {
-    const start = (safePage - 1) * PAGE_SIZE;
-    return rows.slice(start, start + PAGE_SIZE);
-  }, [rows, safePage]);
+  // used to validate week cannot be changed for existing rows
+  const originalWeekByIdRef = useRef(new Map());
 
-  function openEdit(globalIndex) {
-    const r = rows[globalIndex];
-    setEditingIndex(globalIndex);
-    setForm({
-      week: String(r.week ?? ""),
-      feedName: r.feedName ?? "",
-      gramsPerHead: String(r.gramsPerHead ?? ""),
-      mealsPerDay: String(r.mealsPerDay ?? ""),
-      lightingHrs: String(r.lightingHrs ?? ""),
-      remarks: r.remarks ?? "",
+  const filteredRows = useMemo(() => {
+    const w = asInt(filterWeek);
+    if (!w) return rows;
+    return rows.filter((r) => Number(r.week_no) === w);
+  }, [rows, filterWeek]);
+
+  const rowsLabel = useMemo(() => {
+    const shown = filteredRows.length;
+    const total = rows.length;
+    return `Showing ${shown} of ${total}`;
+  }, [filteredRows.length, rows.length]);
+
+  async function fetchPrograms() {
+    // try common schemas: feed_program (id/title/admin_id)
+    const { data, error } = await supabase
+      .from("feed_program")
+      .select("*")
+      .order("feed_program_id", { ascending: true });
+
+    if (error) throw error;
+
+    const norm =
+      (data ?? []).map((p) => ({
+        id: String(p.feed_program_id ?? p.program_id ?? p.id ?? ""),
+        title:
+          p.title ??
+          p.program_name ??
+          p.name ??
+          `Program ${p.feed_program_id ?? p.program_id ?? p.id ?? ""}`,
+        raw: p,
+      })) ?? [];
+
+    setPrograms(norm);
+
+    // choose default program only once
+    if (!programId && norm.length) {
+      setProgramId(norm[0].id);
+    }
+  }
+
+  async function fetchFeedTypes() {
+    // optional table; if missing, just keep [] and show numeric values
+    const { data, error } = await supabase.from("feed_type_meta").select("*");
+    if (error) {
+      // don't block page if table doesn't exist
+      console.warn("feed_type_meta fetch warning:", error.message);
+      setFeedTypes([]);
+      return;
+    }
+    const norm =
+      (data ?? []).map((t) => ({
+        id: t.feed_type_id ?? t.id,
+        label: pickLabel(t),
+        raw: t,
+      })) ?? [];
+    setFeedTypes(norm);
+  }
+
+  async function fetchSteps(pid) {
+    if (!pid) return;
+    setLoading(true);
+    setErr("");
+    try {
+      const { data, error } = await supabase
+        .from("feed_program_step")
+        .select("*")
+        .eq("feed_program_id", pid)
+        .order("week_no", { ascending: true });
+
+      if (error) throw error;
+
+      const norm =
+        (data ?? []).map((r) => ({
+          step_id: r.step_id ?? r.id ?? null,
+          feed_program_id: r.feed_program_id ?? pid,
+
+          // canonical columns used in save
+          week_no: r.week_no ?? r.week ?? r.week_number ?? null,
+          feed_type_id: r.feed_type_id ?? r.feed_type ?? null,
+          grams_per_head_per_day:
+            r.grams_per_head_per_day ??
+            r.g_per_head_per_day ??
+            r.g_per_head_day ??
+            null,
+          feedings_per_day: r.feedings_per_day ?? r.feedings_day ?? null,
+          lighting_hours: r.lighting_hours ?? r.lighting_hrs ?? null,
+          remarks: r.remarks ?? "",
+        })) ?? [];
+
+      setRows(norm);
+
+      // snapshot original weeks for "week cannot change" validation
+      const m = new Map();
+      for (const r of norm) {
+        if (r.step_id) m.set(String(r.step_id), Number(r.week_no));
+      }
+      originalWeekByIdRef.current = m;
+    } catch (e) {
+      setErr(e?.message ?? "Failed to fetch feed program steps.");
+      console.error("fetchSteps error:", e);
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function openEditor() {
+    setErr("");
+    setDeletedIds([]);
+    setDraft(deepCopy(rows));
+    setOpenEdit(true);
+  }
+
+  function closeEditor() {
+    setOpenEdit(false);
+  }
+
+  function nextWeekNumber(currentDraft) {
+    const weeks = new Set(
+      (currentDraft ?? [])
+        .map((r) => Number(r.week_no))
+        .filter((n) => Number.isFinite(n) && n > 0)
+    );
+    // default: next after max
+    let max = 0;
+    for (const w of weeks) max = Math.max(max, w);
+    return max + 1;
+  }
+
+  function addRow() {
+    setDraft((prev) => {
+      const next = deepCopy(prev ?? []);
+      const week = nextWeekNumber(next);
+      next.push({
+        step_id: null,
+        feed_program_id: programId,
+        week_no: week,
+        feed_type_id: null,
+        grams_per_head_per_day: null,
+        feedings_per_day: null,
+        lighting_hours: null,
+        remarks: "",
+      });
+      return next;
     });
-    setOpen(true);
   }
 
-  function closeModal() {
-    setOpen(false);
-    setEditingIndex(null);
+  function removeRow(idx) {
+    setDraft((prev) => {
+      const next = deepCopy(prev ?? []);
+      const row = next[idx];
+
+      // if existing row -> mark for delete
+      if (row?.step_id) {
+        setDeletedIds((d) => Array.from(new Set([...d, row.step_id])));
+      }
+
+      next.splice(idx, 1);
+      return next;
+    });
   }
 
-  function saveEdit() {
-    if (editingIndex === null) return;
+  function validateDraft(d) {
+    if (!programId) return "Please select a program first.";
 
-    const next = [...rows];
-    next[editingIndex] = {
-      week: Number(form.week),
-      feedName: form.feedName,
-      gramsPerHead: Number(form.gramsPerHead),
-      mealsPerDay: Number(form.mealsPerDay),
-      lightingHrs: Number(form.lightingHrs),
-      remarks: form.remarks,
+    // no duplicates
+    const seen = new Set();
+    for (const r of d) {
+      const w = asInt(r.week_no);
+      if (!w || w <= 0) return "Week must be a positive number.";
+      if (seen.has(w)) return `Duplicate week detected: week ${w}.`;
+      seen.add(w);
+    }
+
+    // week cannot change for existing rows
+    const m = originalWeekByIdRef.current;
+    for (const r of d) {
+      if (!r.step_id) continue;
+      const orig = m.get(String(r.step_id));
+      const now = Number(r.week_no);
+      if (Number.isFinite(orig) && orig !== now) {
+        return `Week cannot be changed for existing rows (step_id ${r.step_id}).`;
+      }
+    }
+
+    // basic numeric sanity (optional, but prevents junk)
+    for (const r of d) {
+      const g = r.grams_per_head_per_day;
+      const f = r.feedings_per_day;
+      const l = r.lighting_hours;
+
+      if (g !== null && g !== "" && asNum(g) !== null && asNum(g) < 0)
+        return "g / head / day cannot be negative.";
+      if (f !== null && f !== "" && asNum(f) !== null && asNum(f) < 0)
+        return "Feedings / day cannot be negative.";
+      if (l !== null && l !== "" && asNum(l) !== null && asNum(l) < 0)
+        return "Lighting (hrs) cannot be negative.";
+    }
+
+    return "";
+  }
+
+  async function saveEditor() {
+    const d = deepCopy(draft ?? []);
+    const msg = validateDraft(d);
+    if (msg) {
+      setErr(msg);
+      return;
+    }
+
+    setBusy(true);
+    setErr("");
+
+    try {
+      const existing = d.filter((r) => !!r.step_id);
+      const created = d.filter((r) => !r.step_id);
+
+      // ✅ UPDATE existing rows only
+      for (const r of existing) {
+        const payload = {
+          feed_type_id: r.feed_type_id ?? null,
+          grams_per_head_per_day:
+            r.grams_per_head_per_day === "" ? null : asNum(r.grams_per_head_per_day),
+          feedings_per_day:
+            r.feedings_per_day === "" ? null : asNum(r.feedings_per_day),
+          lighting_hours:
+            r.lighting_hours === "" ? null : asNum(r.lighting_hours),
+          remarks: r.remarks ?? "",
+        };
+
+        const { error } = await supabase
+          .from("feed_program_step")
+          .update(payload)
+          .eq("step_id", r.step_id)
+          .eq("feed_program_id", programId);
+
+        if (error) throw error;
+      }
+
+      // ✅ INSERT only brand-new rows
+      if (created.length) {
+        const inserts = created.map((r) => ({
+          feed_program_id: programId,
+          week_no: asInt(r.week_no),
+          feed_type_id: r.feed_type_id ?? null,
+          grams_per_head_per_day:
+            r.grams_per_head_per_day === "" ? null : asNum(r.grams_per_head_per_day),
+          feedings_per_day:
+            r.feedings_per_day === "" ? null : asNum(r.feedings_per_day),
+          lighting_hours:
+            r.lighting_hours === "" ? null : asNum(r.lighting_hours),
+          remarks: r.remarks ?? "",
+        }));
+
+        const { error: insErr } = await supabase
+          .from("feed_program_step")
+          .insert(inserts);
+
+        if (insErr) throw insErr;
+      }
+
+      // ✅ DELETE rows marked for deletion
+      if (deletedIds.length) {
+        const { error: delErr } = await supabase
+          .from("feed_program_step")
+          .delete()
+          .in("step_id", deletedIds)
+          .eq("feed_program_id", programId);
+
+        if (delErr) throw delErr;
+      }
+
+      await fetchSteps(programId);
+      setOpenEdit(false);
+    } catch (e) {
+      setErr(e?.message ?? "Failed to save feed guide.");
+      console.error("FeedGuideTable save error:", e);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  useEffect(() => {
+    (async () => {
+      try {
+        await Promise.all([fetchPrograms(), fetchFeedTypes()]);
+      } catch (e) {
+        setErr(e?.message ?? "Failed to load page data.");
+        console.error("initial load error:", e);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    fetchSteps(programId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [programId]);
+
+  const feedTypeLabel = useMemo(() => {
+    const m = new Map();
+    for (const t of feedTypes) m.set(String(t.id), t.label);
+    return (id) => {
+      if (id === null || id === undefined || id === "") return "—";
+      return m.get(String(id)) ?? String(id);
     };
-
-    setRows(next);
-    closeModal();
-  }
-
-  // ✅ map page row index -> global index in rows
-  function globalIndexFromPageIndex(i) {
-    return (safePage - 1) * PAGE_SIZE + i;
-  }
+  }, [feedTypes]);
 
   return (
-    <div>
-      {/* ✅ Keep only title
-      <div className="mb-4">
-        <h2 className="text-lg font-bold text-slate-900">Feeding Guide Table</h2>
-      </div> */}
+    <>
+      {/* Header (same layout style as your screenshot) */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-lg font-bold text-slate-900">Feeding Guide</div>
+          <div className="mt-1 text-sm text-slate-500">
+            Pulled from feed_program and feed_program_step.
+          </div>
+        </div>
 
-      {/* ✅ Table wrapper */}
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <table className="w-full table-fixed text-left text-sm">
-          {/* table-fixed + col widths => data aligns with header */}
-          <colgroup>
-            <col className="w-[90px]" />
-            <col className="w-[180px]" />
-            <col className="w-[140px]" />
-            <col className="w-[140px]" />
-            <col className="w-[170px]" />
-            <col className="w-[160px]" />
-            <col className="w-[150px]" />
-          </colgroup>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => fetchSteps(programId)}
+            className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50"
+          >
+            <FiRefreshCw />
+            Refresh
+          </button>
 
-          <thead className="bg-slate-50 text-slate-700">
-            <tr className="border-b border-slate-200">
-              {/* ✅ tighter padding */}
-              <th className="px-6 py-3 font-">Week</th>
-              <th className="px-6 py-3 font-semibold">Feed Name</th>
-              <th className="px-6 py-3 font-semibold">g/hd/day</th>
-              <th className="px-6 py-3 font-semibold">Meals/day</th>
-              <th className="px-6 py-3 font-semibold">Lighting (hrs)</th>
-              <th className="px-6 py-3 font-semibold">Remarks</th>
-              <th className="px-11 py-3 font-semibold">Action</th>
+          <button
+            onClick={openEditor}
+            disabled={!programId || loading}
+            className={[
+              "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold ring-1 transition",
+              !programId || loading
+                ? "bg-slate-100 text-slate-400 ring-slate-200 cursor-not-allowed"
+                : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50",
+            ].join(" ")}
+          >
+            <FiEdit2 />
+            Edit
+          </button>
+        </div>
+      </div>
+
+      {/* Error banner */}
+      {err ? (
+        <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          {err}
+        </div>
+      ) : null}
+
+      {/* Controls row */}
+      <div className="mt-5 grid gap-4 lg:grid-cols-3">
+        <label className="text-xs font-semibold text-slate-600">
+          Program
+          <select
+            value={programId}
+            onChange={(e) => setProgramId(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-yellow-200"
+          >
+            {programs.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.title}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="text-xs font-semibold text-slate-600">
+          Filter by week
+          <input
+            value={filterWeek}
+            onChange={(e) => setFilterWeek(e.target.value)}
+            placeholder="e.g. 12"
+            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-yellow-200"
+          />
+        </label>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="text-xs font-semibold text-slate-600">Rows</div>
+          <div className="mt-1 text-sm font-semibold text-slate-900">
+            {loading ? "Loading..." : rowsLabel}
+          </div>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="mt-5 overflow-hidden rounded-2xl ring-1 ring-slate-200">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-slate-50 text-xs font-bold text-slate-700">
+            <tr>
+              <th className="px-5 py-4">Week</th>
+              <th className="px-5 py-4">Feed Type</th>
+              <th className="px-5 py-4">g / head / day</th>
+              <th className="px-5 py-4">Feedings / day</th>
+              <th className="px-5 py-4">Lighting (hrs)</th>
+              <th className="px-5 py-4">Remarks</th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-200">
-            {paged.map((r, i) => {
-              const gi = globalIndexFromPageIndex(i);
-              return (
-                <tr key={`${r.week}-${gi}`} className={i % 2 ? "bg-yellow-50/30" : "bg-white"}>
-                  {/* ✅ same padding as header so it aligns */}
-                  <td className="px-6 py-4 text-slate-800 font-bold">{r.week}</td>
-                  <td className="px-6 py-4 text-slate-900 truncate">
-                    {r.feedName}
-                  </td>
-                  <td className="px-6 py-4 text-slate-800">{format2(r.gramsPerHead)}</td>
-                  <td className="px-11 py-4 text-slate-800">{r.mealsPerDay}</td>
-                  <td className="px-11 py-4 text-slate-800">{format2(r.lightingHrs)}</td>
-                  <td className="px-6 py-4 text-slate-800 truncate">
-                    {r.remarks || "-"}
-                  </td>
-                  <td className="px-6 py-4">
-                    <button
-                      type="button"
-                      onClick={() => openEdit(gi)}
-                      className="inline-flex items-center gap-2 rounded-xl border border-yellow-300 bg-white px-4 py-2 text-sm font-semibold text-yellow-900 hover:bg-yellow-50"
-                    >
-                      <FiEdit2 />
-                      Edit
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-
-            {paged.length === 0 && (
+          <tbody className="divide-y divide-slate-200 bg-white">
+            {filteredRows.length === 0 ? (
               <tr>
-                <td className="px-6 py-10 text-center text-slate-500" colSpan={7}>
-                  No results
+                <td className="px-5 py-6 text-slate-500" colSpan={6}>
+                  {loading ? "Loading..." : "No rows found."}
                 </td>
               </tr>
+            ) : (
+              filteredRows.map((r) => (
+                <tr key={r.step_id ?? `new-${r.week_no}`}>
+                  <td className="px-5 py-4 text-slate-900">{r.week_no}</td>
+                  <td className="px-5 py-4 text-slate-900">
+                    {feedTypeLabel(r.feed_type_id)}
+                  </td>
+                  <td className="px-5 py-4 text-slate-900">
+                    {r.grams_per_head_per_day ?? "—"}
+                  </td>
+                  <td className="px-5 py-4 text-slate-900">
+                    {r.feedings_per_day ?? "—"}
+                  </td>
+                  <td className="px-5 py-4 text-slate-900">
+                    {r.lighting_hours ?? "—"}
+                  </td>
+                  <td className="px-5 py-4 text-slate-900">
+                    {r.remarks || "—"}
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
       </div>
 
-      {/* ✅ Pagination (like “next page”) */}
-      <div className="mt-4 flex items-center justify-end gap-2">
-        <button
-          className="h-9 w-9 rounded-lg border border-slate-200 bg-white text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-          disabled={safePage === 1}
-        >
-          ‹
-        </button>
+      {/* Edit Modal (same styling pattern you use) */}
+      {openEdit && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-900/40"
+            onClick={busy ? undefined : closeEditor}
+          />
 
-        {Array.from({ length: totalPages }).map((_, idx) => {
-          const num = idx + 1;
-          const active = num === safePage;
-          return (
-            <button
-              key={num}
-              onClick={() => setPage(num)}
-              className={[
-                "h-9 w-9 rounded-lg border text-sm font-semibold transition",
-                active
-                  ? "border-yellow-400 bg-yellow-50 text-yellow-800"
-                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
-              ].join(" ")}
-            >
-              {num}
-            </button>
-          );
-        })}
+          <div className="relative w-full max-w-6xl overflow-hidden rounded-2xl bg-white shadow-[0_20px_60px_rgba(15,23,42,0.25)] ring-1 ring-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-200 bg-yellow-50 px-6 py-4">
+              <div className="text-lg font-semibold text-slate-900">
+                Edit Feeding Guide
+              </div>
 
-        <button
-          className="h-9 w-9 rounded-lg border border-slate-200 bg-white text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          disabled={safePage === totalPages}
-        >
-          ›
-        </button>
-      </div>
-
-      {/* ✅ Edit Modal (UI only) */}
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-6">
-          <div className="w-full max-w-xl rounded-2xl bg-white shadow-[0_25px_60px_rgba(15,23,42,0.2)]">
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
-              <h3 className="text-base font-bold text-slate-900">Edit Feed Guide</h3>
               <button
-                onClick={closeModal}
-                className="rounded-xl p-2 text-slate-500 hover:bg-slate-100"
+                onClick={busy ? undefined : closeEditor}
+                className={[
+                  "rounded-xl p-2 text-slate-700 transition",
+                  busy ? "opacity-50 cursor-not-allowed" : "hover:bg-yellow-100",
+                ].join(" ")}
                 aria-label="Close"
               >
-                <FiX />
+                <FiX className="text-lg" />
               </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2">
-              <Field label="Week">
-                <input
-                  value={form.week}
-                  onChange={(e) => setForm((s) => ({ ...s, week: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100"
-                />
-              </Field>
+            <div className="max-h-[75vh] overflow-auto px-6 py-5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-bold text-slate-900">Steps</div>
 
-              <Field label="Feed Name">
-                <input
-                  value={form.feedName}
-                  onChange={(e) => setForm((s) => ({ ...s, feedName: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100"
-                />
-              </Field>
+                <button
+                  onClick={addRow}
+                  disabled={busy}
+                  className={[
+                    "inline-flex items-center gap-2 rounded-xl bg-yellow-50 px-3 py-2 text-xs font-semibold text-slate-900 ring-1 ring-yellow-200",
+                    busy ? "opacity-50 cursor-not-allowed" : "hover:bg-yellow-100",
+                  ].join(" ")}
+                >
+                  <FiPlus />
+                  Add row
+                </button>
+              </div>
 
-              <Field label="g/hd/day">
-                <input
-                  value={form.gramsPerHead}
-                  onChange={(e) => setForm((s) => ({ ...s, gramsPerHead: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100"
-                />
-              </Field>
+              <div className="mt-4 overflow-hidden rounded-2xl ring-1 ring-slate-200">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-xs font-bold text-slate-700">
+                    <tr>
+                      <th className="px-4 py-3">Week</th>
+                      <th className="px-4 py-3">Feed Type</th>
+                      <th className="px-4 py-3">g / head / day</th>
+                      <th className="px-4 py-3">Feedings / day</th>
+                      <th className="px-4 py-3">Lighting (hrs)</th>
+                      <th className="px-4 py-3">Remarks</th>
+                      <th className="px-4 py-3" />
+                    </tr>
+                  </thead>
 
-              <Field label="Meals/day">
-                <input
-                  value={form.mealsPerDay}
-                  onChange={(e) => setForm((s) => ({ ...s, mealsPerDay: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100"
-                />
-              </Field>
+                  <tbody className="divide-y divide-slate-200 bg-white">
+                    {draft.map((r, idx) => (
+                      <tr key={r.step_id ?? `draft-${r.week_no}-${idx}`}>
+                        {/* ✅ Week locked (cannot change week) */}
+                        <td className="px-4 py-3">
+                          <input
+                            value={r.week_no ?? ""}
+                            disabled
+                            className="w-20 rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-700 outline-none"
+                            title="Week is locked"
+                          />
+                        </td>
 
-              <Field label="Lighting (hrs)">
-                <input
-                  value={form.lightingHrs}
-                  onChange={(e) => setForm((s) => ({ ...s, lightingHrs: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100"
-                />
-              </Field>
+                        <td className="px-4 py-3">
+                          {feedTypes.length ? (
+                            <select
+                              value={r.feed_type_id ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setDraft((prev) => {
+                                  const next = deepCopy(prev);
+                                  next[idx].feed_type_id = val === "" ? null : asInt(val);
+                                  return next;
+                                });
+                              }}
+                              disabled={busy}
+                              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-yellow-200"
+                            >
+                              <option value="">—</option>
+                              {feedTypes.map((ft) => (
+                                <option key={String(ft.id)} value={ft.id}>
+                                  {ft.label}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              value={r.feed_type_id ?? ""}
+                              onChange={(e) => {
+                                setDraft((prev) => {
+                                  const next = deepCopy(prev);
+                                  next[idx].feed_type_id = e.target.value === "" ? null : e.target.value;
+                                  return next;
+                                });
+                              }}
+                              disabled={busy}
+                              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-yellow-200"
+                              placeholder="Feed type"
+                            />
+                          )}
+                        </td>
 
-              <Field label="Remarks">
-                <input
-                  value={form.remarks}
-                  onChange={(e) => setForm((s) => ({ ...s, remarks: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-yellow-300 focus:ring-4 focus:ring-yellow-100"
-                />
-              </Field>
+                        <td className="px-4 py-3">
+                          <input
+                            type="number"
+                            value={r.grams_per_head_per_day ?? ""}
+                            onChange={(e) => {
+                              setDraft((prev) => {
+                                const next = deepCopy(prev);
+                                next[idx].grams_per_head_per_day = e.target.value;
+                                return next;
+                              });
+                            }}
+                            disabled={busy}
+                            className="w-40 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-yellow-200"
+                          />
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <input
+                            type="number"
+                            value={r.feedings_per_day ?? ""}
+                            onChange={(e) => {
+                              setDraft((prev) => {
+                                const next = deepCopy(prev);
+                                next[idx].feedings_per_day = e.target.value;
+                                return next;
+                              });
+                            }}
+                            disabled={busy}
+                            className="w-40 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-yellow-200"
+                          />
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <input
+                            type="number"
+                            value={r.lighting_hours ?? ""}
+                            onChange={(e) => {
+                              setDraft((prev) => {
+                                const next = deepCopy(prev);
+                                next[idx].lighting_hours = e.target.value;
+                                return next;
+                              });
+                            }}
+                            disabled={busy}
+                            className="w-40 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-yellow-200"
+                          />
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <input
+                            value={r.remarks ?? ""}
+                            onChange={(e) => {
+                              setDraft((prev) => {
+                                const next = deepCopy(prev);
+                                next[idx].remarks = e.target.value;
+                                return next;
+                              });
+                            }}
+                            disabled={busy}
+                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-yellow-200"
+                            placeholder="Remarks..."
+                          />
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => removeRow(idx)}
+                            disabled={busy}
+                            className={[
+                              "inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-600 ring-1 ring-slate-200 transition",
+                              busy ? "opacity-50 cursor-not-allowed" : "hover:bg-white",
+                            ].join(" ")}
+                            title="Remove row"
+                            aria-label="Remove row"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+
+                    {draft.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-6 text-slate-500">
+                          No rows.
+                        </td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-5">
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 bg-white px-6 py-4">
               <button
-                onClick={closeModal}
-                className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                onClick={busy ? undefined : closeEditor}
+                className={[
+                  "rounded-xl px-4 py-2 text-sm font-semibold ring-1 transition",
+                  busy
+                    ? "bg-slate-100 text-slate-400 ring-slate-200 cursor-not-allowed"
+                    : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50",
+                ].join(" ")}
               >
                 Cancel
               </button>
+
               <button
-                onClick={saveEdit}
-                className="rounded-xl bg-yellow-400 px-5 py-2.5 text-sm font-semibold text-slate-900 hover:bg-yellow-300"
+                onClick={saveEditor}
+                disabled={busy}
+                className={[
+                  "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-sm transition",
+                  busy ? "bg-yellow-300 cursor-not-allowed" : "bg-yellow-500 hover:bg-yellow-600",
+                ].join(" ")}
               >
-                Save
+                <FiCheck className="text-base" />
+                {busy ? "Saving..." : "Save"}
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

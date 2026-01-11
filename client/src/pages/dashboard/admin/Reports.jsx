@@ -335,6 +335,7 @@ export default function Reports() {
                 selectedOption === data
                   ? "text-primaryYellow border-b-2 border-primaryYellow"
                   : "text-gray-400"
+                  // : "text-black"
               }`}
             >
               {data}
@@ -347,6 +348,7 @@ export default function Reports() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setOpen(true)}
+              //change color for date range button
               className="flex items-center gap-2 h-9 px-3 rounded-md border border-gray-600 bg-[#1b1c1f] text-sm text-white hover:bg-gray-800"
             >
               <LuCalendar className="w-4 h-4" />
@@ -371,7 +373,13 @@ export default function Reports() {
             className="bg-primaryYellow text-white text-sm font-semibold rounded-md px-3 py-1 h-9"
           >
             Generate Report
-          </button>
+          </button> 
+          {/* <button
+            onClick={handleGenerate}
+            className="bg-black text-white text-sm font-semibold rounded-md px-3 py-1 h-9 hover:bg-gray-900"
+          >
+            Generate Report
+          </button> */}
         </div>
       </div>
 

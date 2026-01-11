@@ -544,6 +544,13 @@ export default function PayoutReqTable({ selectedOption, date = "all" }) {
               key={index}
               className="bg-yellow-100 text-gray-700 rounded-lg shadow-sm transition"
             >
+              {/* <tr
+  key={index}
+  className={`text-gray-700 rounded-lg shadow-sm transition
+    ${index % 2 === 0 ? "bg-yellow-50" : "bg-yellow-100"}
+    hover:bg-yellow-200`}
+> */}
+
               <td className="px-4 py-3 text-center font-medium">
                 {item.payoutID}
               </td>
